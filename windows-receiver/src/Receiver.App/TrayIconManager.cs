@@ -120,25 +120,37 @@ public class TrayIconManager : IDisposable
         _notifyIcon.ShowBalloonTip(3000, title, message, icon);
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private static extern bool DestroyIcon(IntPtr handle);
+
     private static Icon CreateTrayIcon()
     {
         try
         {
-            // Create a crisp 16x16 icon programmatically
-            using var bitmap = new Bitmap(16, 16);
+            // Create a high-res 32x32 icon with anti-aliasing for modern High-DPI Windows taskbars
+            using var bitmap = new Bitmap(32, 32);
             using (var g = Graphics.FromImage(bitmap))
             {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
-                using var brush = new SolidBrush(Color.FromArgb(37, 99, 235)); // Royal Blue
-                g.FillEllipse(brush, 1, 1, 14, 14);
 
-                using var innerBrush = new SolidBrush(Color.FromArgb(240, 240, 255));
-                g.FillEllipse(innerBrush, 4, 4, 8, 8);
+                // Outer vibrant electric blue circle
+                using var brush = new SolidBrush(Color.FromArgb(14, 165, 233));
+                g.FillEllipse(brush, 1, 1, 30, 30);
 
-                using var centerBrush = new SolidBrush(Color.FromArgb(37, 99, 235));
-                g.FillEllipse(centerBrush, 6, 6, 4, 4);
+                // Dark contrast ring
+                using var darkBrush = new SolidBrush(Color.FromArgb(15, 23, 42));
+                g.FillEllipse(darkBrush, 5, 5, 22, 22);
+
+                // Center bright cyan target
+                using var innerBrush = new SolidBrush(Color.FromArgb(56, 189, 248));
+                g.FillEllipse(innerBrush, 10, 10, 12, 12);
             }
-            return Icon.FromHandle(bitmap.GetHicon());
+
+            IntPtr hIcon = bitmap.GetHicon();
+            Icon icon = (Icon)Icon.FromHandle(hIcon).Clone();
+            DestroyIcon(hIcon);
+            return icon;
         }
         catch
         {

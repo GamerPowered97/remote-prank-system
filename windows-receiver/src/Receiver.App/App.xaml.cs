@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using Receiver.App.Views;
 using Receiver.Core.Dispatcher;
@@ -16,6 +17,23 @@ public partial class App : System.Windows.Application
     private const int ServicePort = 48888;
     private const string CurrentAppVersion = "1.0.0";
 
+    private static readonly string LogFile = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RemotePrankReceiver", "logs", "startup.log");
+
+    public static void Log(string msg)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LogFile)!);
+            File.AppendAllText(LogFile, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PID:{Environment.ProcessId}] {msg}\n");
+        }
+        catch { }
+    }
+
+    private static Mutex? _singleInstanceMutex;
+    private static EventWaitHandle? _showWindowEvent;
+
     private PrankDispatcher? _dispatcher;
     private WebSocketServer? _webSocketServer;
     private DiscoveryService? _discoveryService;
@@ -27,68 +45,153 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        // 1. Ensure automatic launch on user login
-        StartupManager.EnsureStartupRegistered();
+        // ENSURE NO PREMATURE SHUTDOWN
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        // 2. Initialize Dispatcher and register modules
-        _dispatcher = new PrankDispatcher();
-        _dispatcher.RegisterModule(new GlitchScreenModule());
-        _dispatcher.RegisterModule(new MouseDriftModule());
-        _dispatcher.RegisterModule(new AudioStingerModule());
-        _dispatcher.RegisterModule(new FunnyToastModule());
-
-        // 3. Initialize status & log viewer (kept hidden until requested)
-        _logViewerWindow = new LogViewerWindow(_dispatcher);
-
-        // 4. Initialize GitHub update checker
-        _updateChecker = new GitHubUpdateChecker(CurrentAppVersion);
-
-        // 5. Initialize & start WebSocket server
-        _webSocketServer = new WebSocketServer(ServicePort, _dispatcher, CurrentAppVersion);
-
-        _webSocketServer.NukeRequested += async (sleepSeconds) =>
+        // Check for existing instance
+        bool createdNew;
+        try
         {
-            _dispatcher.Log($"Nuke requested from remote. Sleeping for {sleepSeconds}s...");
-            await _dispatcher.StopActiveAsync("Nuke shutdown");
-            NukeManager.TriggerNuke(sleepSeconds);
-        };
-
-        _webSocketServer.CheckUpdateRequested += async () =>
+            _singleInstanceMutex = new Mutex(true, "Local\\RemotePrankReceiver_SingleInstanceMutex", out createdNew);
+        }
+        catch
         {
-            _dispatcher.Log("Checking GitHub Releases for updates...");
-            return await _updateChecker.CheckForUpdatesAsync();
-        };
+            createdNew = true;
+        }
 
-        _webSocketServer.ApplyUpdateRequested += async (downloadUrl) =>
+        if (!createdNew)
         {
-            _dispatcher.Log($"Applying update from: {downloadUrl}");
+            // Already running! Signal the running instance to show its status/log window
             try
             {
-                string tempExe = await _updateChecker.DownloadUpdateAsync(downloadUrl);
-                _dispatcher.Log($"Downloaded update to: {tempExe}. Launching updater...");
-                UpdateLauncher.ApplyUpdate(tempExe);
+                using var showEvent = EventWaitHandle.OpenExisting("Local\\RemotePrankReceiver_ShowWindowEvent");
+                showEvent.Set();
             }
-            catch (Exception ex)
+            catch { }
+            Shutdown(0);
+            return;
+        }
+
+        Log("App.OnStartup called. Single instance lock acquired. ShutdownMode set to OnExplicitShutdown.");
+
+        try
+        {
+            _showWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\RemotePrankReceiver_ShowWindowEvent");
+            ThreadPool.RegisterWaitForSingleObject(_showWindowEvent, (state, timedOut) =>
             {
-                _dispatcher.Log($"Failed to apply update: {ex.Message}");
-            }
+                Dispatcher.Invoke(() =>
+                {
+                    if (_logViewerWindow != null)
+                    {
+                        _logViewerWindow.Show();
+                        _logViewerWindow.WindowState = WindowState.Normal;
+                        _logViewerWindow.Activate();
+                    }
+                });
+            }, null, -1, false);
+        }
+        catch { }
+
+        DispatcherUnhandledException += (sender, args) =>
+        {
+            Log($"[FATAL DispatcherException] {args.Exception}");
+            System.Windows.MessageBox.Show($"Receiver Error:\n{args.Exception.Message}\n\nCheck {LogFile} for details.", "Remote Prank Receiver Error", MessageBoxButton.OK, MessageBoxImage.Error);
         };
 
-        _webSocketServer.Start();
+        AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+        {
+            Log($"[FATAL AppDomainException] {args.ExceptionObject}");
+        };
 
-        // 6. Initialize & start mDNS discovery responder
-        _discoveryService = new DiscoveryService(ServicePort, Environment.MachineName, msg => _dispatcher.Log(msg));
-        _discoveryService.Start();
+        try
+        {
+            Log("Registering startup...");
+            // 1. Ensure automatic launch on user login
+            StartupManager.EnsureStartupRegistered();
+            Log("Startup registered.");
 
-        // 7. Initialize System Tray Icon
-        _trayManager = new TrayIconManager(_dispatcher, _logViewerWindow, ShutdownApp);
+            // 2. Initialize Dispatcher and register modules
+            Log("Initializing Dispatcher...");
+            _dispatcher = new PrankDispatcher();
+            _dispatcher.RegisterModule(new GlitchScreenModule());
+            _dispatcher.RegisterModule(new MouseDriftModule());
+            _dispatcher.RegisterModule(new AudioStingerModule());
+            _dispatcher.RegisterModule(new FunnyToastModule());
+            Log("Dispatcher initialized.");
 
-        _dispatcher.Log("Remote Companion Receiver initialized successfully in System Tray.");
-        _trayManager.ShowBalloon("Remote Companion Receiver", "Running in System Tray on port 48888. Double-click tray icon to cancel any active effect.");
+            // 3. Initialize status & log viewer (kept hidden until requested)
+            Log("Initializing LogViewerWindow...");
+            _logViewerWindow = new LogViewerWindow(_dispatcher);
+            Log("LogViewerWindow initialized.");
+
+            // 4. Initialize GitHub update checker
+            Log("Initializing UpdateChecker...");
+            _updateChecker = new GitHubUpdateChecker(CurrentAppVersion);
+            Log("UpdateChecker initialized.");
+
+            // 5. Initialize & start WebSocket server
+            Log("Starting WebSocketServer on port " + ServicePort + "...");
+            _webSocketServer = new WebSocketServer(ServicePort, _dispatcher, CurrentAppVersion);
+
+            _webSocketServer.NukeRequested += async (sleepSeconds) =>
+            {
+                _dispatcher.Log($"Nuke requested from remote. Sleeping for {sleepSeconds}s...");
+                await _dispatcher.StopActiveAsync("Nuke shutdown");
+                NukeManager.TriggerNuke(sleepSeconds);
+            };
+
+            _webSocketServer.CheckUpdateRequested += async () =>
+            {
+                _dispatcher.Log("Checking GitHub Releases for updates...");
+                return await _updateChecker.CheckForUpdatesAsync();
+            };
+
+            _webSocketServer.ApplyUpdateRequested += async (downloadUrl) =>
+            {
+                _dispatcher.Log($"Applying update from: {downloadUrl}");
+                try
+                {
+                    string tempExe = await _updateChecker.DownloadUpdateAsync(downloadUrl);
+                    _dispatcher.Log($"Downloaded update to: {tempExe}. Launching updater...");
+                    UpdateLauncher.ApplyUpdate(tempExe);
+                }
+                catch (Exception ex)
+                {
+                    _dispatcher.Log($"Failed to apply update: {ex.Message}");
+                }
+            };
+
+            _webSocketServer.Start();
+            Log("WebSocketServer started.");
+
+            // 6. Initialize & start mDNS discovery responder
+            Log("Starting DiscoveryService...");
+            _discoveryService = new DiscoveryService(ServicePort, Environment.MachineName, msg => {
+                _dispatcher.Log(msg);
+                Log("[Discovery] " + msg);
+            });
+            _discoveryService.Start();
+            Log("DiscoveryService started.");
+
+            // 7. Initialize System Tray Icon
+            Log("Initializing TrayIconManager...");
+            _trayManager = new TrayIconManager(_dispatcher, _logViewerWindow, ShutdownApp);
+            Log("TrayIconManager initialized.");
+
+            _dispatcher.Log("Remote Companion Receiver initialized successfully in System Tray.");
+            _trayManager.ShowBalloon("Remote Companion Receiver", "Running in System Tray on port 48888. Double-click tray icon to cancel any active effect.");
+            Log("Startup complete. Running in tray.");
+        }
+        catch (Exception ex)
+        {
+            Log($"[FATAL in OnStartup] {ex}");
+            System.Windows.MessageBox.Show($"Failed to start Remote Prank Receiver:\n\n{ex.Message}\n\nStack:\n{ex.StackTrace}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void ShutdownApp()
     {
+        Log("ShutdownApp() was invoked. StackTrace: " + Environment.StackTrace);
         _dispatcher?.Log("Shutting down Receiver application...");
         _trayManager?.Dispose();
         _discoveryService?.Stop();
@@ -99,6 +202,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Log($"App.OnExit called with ExitCode: {e.ApplicationExitCode}. StackTrace: {Environment.StackTrace}");
         _trayManager?.Dispose();
         _discoveryService?.Stop();
         _webSocketServer?.Stop();
