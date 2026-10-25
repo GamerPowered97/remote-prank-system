@@ -283,6 +283,14 @@ public class WebSocketServer
                 }
                 break;
 
+            case MessageTypes.UpdateParams:
+                var updateParamsCmd = MessageSerializer.Deserialize<UpdateParamsCommand>(json);
+                if (updateParamsCmd != null && !string.IsNullOrEmpty(updateParamsCmd.ModuleId) && updateParamsCmd.Parameters != null)
+                {
+                    _dispatcher.UpdateActiveParameters(updateParamsCmd.ModuleId, updateParamsCmd.Parameters);
+                }
+                break;
+
             case MessageTypes.Kill:
                 await _dispatcher.StopActiveAsync("Stopped by remote controller");
                 break;
@@ -303,19 +311,32 @@ public class WebSocketServer
                 break;
 
             case MessageTypes.CheckUpdate:
-                if (CheckUpdateRequested != null)
+                try
                 {
-                    var updateStatus = await CheckUpdateRequested.Invoke();
-                    await SendMessageAsync(client, updateStatus, token);
+                    if (CheckUpdateRequested != null)
+                    {
+                        var updateStatus = await CheckUpdateRequested.Invoke();
+                        await SendMessageAsync(client, updateStatus, token);
+                    }
+                    else
+                    {
+                        await SendMessageAsync(client, new UpdateStatusMessage
+                        {
+                            HasUpdate = false,
+                            CurrentVersion = _serverVersion,
+                            LatestVersion = _serverVersion,
+                            ReleaseNotes = "No update checker configured."
+                        }, token);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
+                    _dispatcher.Log($"Error during update check: {ex.Message}");
                     await SendMessageAsync(client, new UpdateStatusMessage
                     {
                         HasUpdate = false,
                         CurrentVersion = _serverVersion,
-                        LatestVersion = _serverVersion,
-                        ReleaseNotes = "No update checker configured."
+                        Error = $"Update check failed: {ex.Message}"
                     }, token);
                 }
                 break;

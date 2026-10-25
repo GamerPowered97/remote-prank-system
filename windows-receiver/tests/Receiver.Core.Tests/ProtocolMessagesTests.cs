@@ -42,6 +42,31 @@ public class ProtocolMessagesTests
     }
 
     [Fact]
+    public void UpdateParamsCommand_SerializesAndDeserializesCorrectly()
+    {
+        var cmd = new UpdateParamsCommand
+        {
+            ModuleId = "glitch_screen",
+            Parameters = new Dictionary<string, object>
+            {
+                { "intensity", 8 },
+                { "speed", 9 }
+            }
+        };
+
+        string json = MessageSerializer.Serialize(cmd);
+        Assert.Contains("\"type\":\"update_params\"", json);
+        Assert.Contains("\"module_id\":\"glitch_screen\"", json);
+
+        var deserialized = MessageSerializer.Deserialize<UpdateParamsCommand>(json);
+        Assert.NotNull(deserialized);
+        Assert.Equal(MessageTypes.UpdateParams, deserialized.Type);
+        Assert.Equal("glitch_screen", deserialized.ModuleId);
+        Assert.NotNull(deserialized.Parameters);
+        Assert.True(deserialized.Parameters.ContainsKey("intensity"));
+    }
+
+    [Fact]
     public void NukeCommand_SerializesAndDeserializesCorrectly()
     {
         var cmd = new NukeCommand { SleepSeconds = 120 };

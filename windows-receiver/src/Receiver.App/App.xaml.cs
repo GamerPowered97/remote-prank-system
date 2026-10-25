@@ -5,7 +5,7 @@ using Receiver.Core.Dispatcher;
 using Receiver.Core.Lifecycle;
 using Receiver.Core.Networking;
 using Receiver.Core.Update;
-using Receiver.Modules.Audio;
+using Receiver.Modules.Hardware;
 using Receiver.Modules.Input;
 using Receiver.Modules.Notification;
 using Receiver.Modules.Visual;
@@ -15,7 +15,7 @@ namespace Receiver.App;
 public partial class App : System.Windows.Application
 {
     private const int ServicePort = 48888;
-    private const string CurrentAppVersion = "1.0.0";
+    private const string CurrentAppVersion = "1.1.0";
 
     private static readonly string LogFile = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -115,8 +115,8 @@ public partial class App : System.Windows.Application
             _dispatcher = new PrankDispatcher();
             _dispatcher.RegisterModule(new GlitchScreenModule());
             _dispatcher.RegisterModule(new MouseDriftModule());
-            _dispatcher.RegisterModule(new AudioStingerModule());
-            _dispatcher.RegisterModule(new FunnyToastModule());
+            _dispatcher.RegisterModule(new FanSpeedModule());
+            _dispatcher.RegisterModule(new SystemAlertModule());
             Log("Dispatcher initialized.");
 
             // 3. Initialize status & log viewer (kept hidden until requested)

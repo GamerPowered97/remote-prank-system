@@ -16,7 +16,10 @@ public class GitHubUpdateChecker
         _currentVersion = currentVersion.TrimStart('v');
         _repoOwner = repoOwner;
         _repoName = repoName;
-        _httpClient = new HttpClient();
+        _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(10)
+        };
         _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("RemotePrankReceiver", _currentVersion));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
     }

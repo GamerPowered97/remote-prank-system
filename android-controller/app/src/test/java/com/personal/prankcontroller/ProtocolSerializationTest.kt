@@ -22,6 +22,19 @@ class ProtocolSerializationTest {
     }
 
     @Test
+    fun testUpdateParamsCommandSerialization() {
+        val cmd = UpdateParamsCommand(
+            moduleId = "glitch_screen",
+            parameters = mapOf("intensity" to 8, "speed" to 7)
+        )
+        val json = gson.toJson(cmd)
+        assertTrue(json.contains("\"type\":\"update_params\""))
+        assertTrue(json.contains("\"module_id\":\"glitch_screen\""))
+        assertTrue(json.contains("\"intensity\":8"))
+        assertTrue(json.contains("\"speed\":7"))
+    }
+
+    @Test
     fun testKillCommandSerialization() {
         val cmd = KillCommand()
         val json = gson.toJson(cmd)

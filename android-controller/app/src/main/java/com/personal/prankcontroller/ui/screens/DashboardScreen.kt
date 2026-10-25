@@ -31,7 +31,8 @@ fun DashboardScreen(
     activeModuleId: String?,
     updateStatus: UpdateStatusResponse?,
     isCheckingUpdate: Boolean,
-    onTriggerModule: (String) -> Unit,
+    onTriggerModule: (String, Map<String, Any>) -> Unit,
+    onUpdateParams: (String, Map<String, Any>) -> Unit,
     onEmergencyStop: () -> Unit,
     onNuke: () -> Unit,
     onCheckUpdate: () -> Unit,
@@ -170,7 +171,8 @@ fun DashboardScreen(
                         module = module,
                         isActive = isActive,
                         isEnabled = connectionState is ConnectionState.Connected,
-                        onTrigger = { onTriggerModule(module.id) }
+                        onTrigger = { params -> onTriggerModule(module.id, params) },
+                        onUpdateParams = { params -> onUpdateParams(module.id, params) }
                     )
                 }
             }

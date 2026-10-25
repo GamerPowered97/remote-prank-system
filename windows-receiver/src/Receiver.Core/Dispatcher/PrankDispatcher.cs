@@ -166,4 +166,30 @@ public class PrankDispatcher
 
         StatusChanged?.Invoke(module?.Id, "STOPPED", reason);
     }
+
+    public void UpdateActiveParameters(string moduleId, Dictionary<string, object> parameters)
+    {
+        IPrankModule? module;
+        lock (_lock)
+        {
+            if (IsRunning && _currentModule != null && string.Equals(_currentModule.Id, moduleId, StringComparison.OrdinalIgnoreCase))
+            {
+                module = _currentModule;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        try
+        {
+            Log($"Updating live parameters for '{module.DisplayName}'");
+            module.UpdateParameters(parameters);
+        }
+        catch (Exception ex)
+        {
+            Log($"Error updating parameters for '{module.DisplayName}': {ex.Message}");
+        }
+    }
 }

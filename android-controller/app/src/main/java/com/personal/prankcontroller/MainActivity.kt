@@ -46,8 +46,16 @@ class MainActivity : ComponentActivity() {
                     activeModuleId = activeModuleId,
                     updateStatus = updateStatus,
                     isCheckingUpdate = isCheckingUpdate,
-                    onTriggerModule = { moduleId ->
-                        webSocketClient.sendExecute(moduleId)
+                    onTriggerModule = { moduleId, params ->
+                        if (activeModuleId == moduleId) {
+                            webSocketClient.sendKill()
+                            activeModuleId = null
+                        } else {
+                            webSocketClient.sendExecute(moduleId, params)
+                        }
+                    },
+                    onUpdateParams = { moduleId, params ->
+                        webSocketClient.sendUpdateParams(moduleId, params)
                     },
                     onEmergencyStop = {
                         webSocketClient.sendKill()
@@ -57,8 +65,38 @@ class MainActivity : ComponentActivity() {
                         webSocketClient.sendNuke(120)
                     },
                     onCheckUpdate = {
-                        isCheckingUpdate = true
-                        webSocketClient.sendCheckUpdate()
+                        if (!webSocketClient.isConnected) {
+                            isCheckingUpdate = false
+                            updateStatus = UpdateStatusResponse(
+                                type = "update_status",
+                                hasUpdate = false,
+                                currentVersion = "Offline",
+                                latestVersion = null,
+                                releaseNotes = null,
+                                downloadUrl = null,
+                                error = "Not connected to PC receiver. Please connect via Wi-Fi first."
+                            )
+                        } else {
+                            isCheckingUpdate = true
+                            webSocketClient.sendCheckUpdate()
+                            lifecycleScope.launch {
+                                delay(10000)
+                                if (isCheckingUpdate) {
+                                    isCheckingUpdate = false
+                                    if (updateStatus == null || updateStatus?.error == null) {
+                                        updateStatus = UpdateStatusResponse(
+                                            type = "update_status",
+                                            hasUpdate = false,
+                                            currentVersion = (connectionState as? ConnectionState.Connected)?.serverVersion ?: "Unknown",
+                                            latestVersion = null,
+                                            releaseNotes = null,
+                                            downloadUrl = null,
+                                            error = "Update check timed out after 10s. Check PC internet connection."
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     },
                     onApplyUpdate = { downloadUrl ->
                         webSocketClient.sendApplyUpdate(downloadUrl)
@@ -96,6 +134,7 @@ class MainActivity : ComponentActivity() {
             },
             onDisconnected = { reason ->
                 runOnUiThread {
+                    isCheckingUpdate = false
                     if (!isNuked) {
                         connectionState = ConnectionState.Disconnected(reason)
                         activeModuleId = null

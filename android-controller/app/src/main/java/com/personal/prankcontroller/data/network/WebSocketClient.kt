@@ -103,6 +103,11 @@ class WebSocketClient(
         sendJson(cmd)
     }
 
+    fun sendUpdateParams(moduleId: String, parameters: Map<String, Any>) {
+        val cmd = UpdateParamsCommand(moduleId = moduleId, parameters = parameters)
+        sendJson(cmd)
+    }
+
     fun sendKill() {
         sendJson(KillCommand())
     }

@@ -20,6 +20,12 @@ data class ExecuteCommand(
     @SerializedName("parameters") val parameters: Map<String, Any>? = null
 )
 
+data class UpdateParamsCommand(
+    @SerializedName("type") val type: String = "update_params",
+    @SerializedName("module_id") val moduleId: String,
+    @SerializedName("parameters") val parameters: Map<String, Any>? = null
+)
+
 data class KillCommand(
     @SerializedName("type") val type: String = "kill"
 )

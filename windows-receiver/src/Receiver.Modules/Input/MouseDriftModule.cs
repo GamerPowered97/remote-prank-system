@@ -12,8 +12,28 @@ public class MouseDriftModule : IPrankModule
 
     public IReadOnlyDictionary<string, object> DefaultParameters => new Dictionary<string, object>
     {
-        { "duration_seconds", 8 }
+        { "duration_seconds", 15 },
+        { "speed", 5 },
+        { "strength", 5 }
     };
+
+    private volatile int _speed = 5;
+    private volatile int _strength = 5;
+
+    public void UpdateParameters(IReadOnlyDictionary<string, object> parameters)
+    {
+        if (parameters.TryGetValue("speed", out var sVal))
+        {
+            if (sVal is int s) _speed = Math.Clamp(s, 1, 10);
+            else if (int.TryParse(sVal?.ToString(), out int parsed)) _speed = Math.Clamp(parsed, 1, 10);
+        }
+
+        if (parameters.TryGetValue("strength", out var strVal))
+        {
+            if (strVal is int str) _strength = Math.Clamp(str, 1, 10);
+            else if (int.TryParse(strVal?.ToString(), out int parsed)) _strength = Math.Clamp(parsed, 1, 10);
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT
@@ -30,14 +50,16 @@ public class MouseDriftModule : IPrankModule
 
     public async Task ExecuteAsync(PrankContext context, CancellationToken cancellationToken)
     {
-        int durationSeconds = 8;
+        int durationSeconds = 15;
         if (context.Parameters.TryGetValue("duration_seconds", out var val))
         {
             if (val is int intVal) durationSeconds = intVal;
             else if (int.TryParse(val?.ToString(), out int parsed)) durationSeconds = parsed;
         }
 
-        context.LogInfo($"Mouse drift module active for {durationSeconds} seconds...");
+        UpdateParameters(context.Parameters);
+
+        context.LogInfo($"Mouse drift module active for {durationSeconds} seconds (Speed: {_speed}, Strength: {_strength})...");
 
         var startTime = DateTime.UtcNow;
         var endTime = startTime.AddSeconds(durationSeconds);
@@ -47,14 +69,16 @@ public class MouseDriftModule : IPrankModule
         {
             if (GetCursorPos(out POINT currentPos))
             {
-                int deltaX = (int)Math.Round(Math.Sin(angle) * 2.5);
-                int deltaY = (int)Math.Round(Math.Cos(angle * 1.5) * 2.0);
+                double amp = 1.0 + (_strength * 1.2);
+                int deltaX = (int)Math.Round(Math.Sin(angle) * amp);
+                int deltaY = (int)Math.Round(Math.Cos(angle * 1.5) * (amp * 0.8));
 
                 SetCursorPos(currentPos.X + deltaX, currentPos.Y + deltaY);
             }
 
-            angle += 0.25;
-            await Task.Delay(40, cancellationToken);
+            double angleStep = 0.05 + (_speed * 0.05);
+            angle += angleStep;
+            await Task.Delay(30, cancellationToken);
         }
     }
 

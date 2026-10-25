@@ -23,6 +23,9 @@ public partial class GlitchOverlayWindow : Window
 
     private readonly DispatcherTimer _glitchTimer;
     private readonly Random _random = new();
+    private volatile int _intensity = 5;
+    private volatile int _speed = 5;
+
     private readonly Brush[] _glitchBrushes = new Brush[]
     {
         new SolidColorBrush(Color.FromArgb(80, 0, 255, 255)),   // Cyan
@@ -32,7 +35,7 @@ public partial class GlitchOverlayWindow : Window
         new SolidColorBrush(Color.FromArgb(70, 0, 255, 60))     // Terminal Green
     };
 
-    public GlitchOverlayWindow()
+    public GlitchOverlayWindow(int intensity = 5, int speed = 5)
     {
         InitializeComponent();
 
@@ -41,11 +44,23 @@ public partial class GlitchOverlayWindow : Window
         Width = SystemParameters.VirtualScreenWidth;
         Height = SystemParameters.VirtualScreenHeight;
 
+        _intensity = Math.Clamp(intensity, 1, 10);
+        _speed = Math.Clamp(speed, 1, 10);
+
         _glitchTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(40)
+            Interval = TimeSpan.FromMilliseconds(CalculateIntervalMs(_speed))
         };
         _glitchTimer.Tick += OnGlitchTick;
+    }
+
+    private static int CalculateIntervalMs(int speed) => Math.Max(15, 105 - (speed * 9));
+
+    public void UpdateSettings(int intensity, int speed)
+    {
+        _intensity = Math.Clamp(intensity, 1, 10);
+        _speed = Math.Clamp(speed, 1, 10);
+        _glitchTimer.Interval = TimeSpan.FromMilliseconds(CalculateIntervalMs(_speed));
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -66,11 +81,13 @@ public partial class GlitchOverlayWindow : Window
         double screenW = Width;
         double screenH = Height;
 
-        // Random chance of glitch bars
-        int barCount = _random.Next(2, 7);
+        int minBars = Math.Max(1, _intensity / 2);
+        int maxBars = Math.Max(minBars + 1, _intensity * 2);
+        int barCount = _random.Next(minBars, maxBars);
+
         for (int i = 0; i < barCount; i++)
         {
-            double barHeight = _random.Next(4, 35);
+            double barHeight = _random.Next(4, 15 + (_intensity * 4));
             double barTop = _random.NextDouble() * (screenH - barHeight);
             double barLeft = _random.NextDouble() * (screenW * 0.3);
             double barWidth = _random.Next((int)(screenW * 0.2), (int)screenW);
@@ -88,8 +105,8 @@ public partial class GlitchOverlayWindow : Window
             GlitchCanvas.Children.Add(rect);
         }
 
-        // Random scanline shift
-        ScanlineRect.Opacity = 0.05 + (_random.NextDouble() * 0.12);
+        // Random scanline shift scaled by intensity
+        ScanlineRect.Opacity = 0.03 + ((_intensity / 10.0) * 0.08) + (_random.NextDouble() * 0.08);
     }
 
     public void StopAndClose()

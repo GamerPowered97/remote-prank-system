@@ -16,12 +16,18 @@ public class TestMockModule : IPrankModule
     public bool WasExecuted { get; private set; }
     public bool WasReverted { get; private set; }
     public bool ShouldThrow { get; set; }
+    public IReadOnlyDictionary<string, object>? UpdatedParams { get; private set; }
     private readonly int _delayMs;
 
     public TestMockModule(string id, int delayMs = 100)
     {
         Id = id;
         _delayMs = delayMs;
+    }
+
+    public void UpdateParameters(IReadOnlyDictionary<string, object> parameters)
+    {
+        UpdatedParams = parameters;
     }
 
     public async Task ExecuteAsync(PrankContext context, CancellationToken cancellationToken)
@@ -152,5 +158,29 @@ public class PrankDispatcherTests
         Assert.Equal("ERROR", lastState);
         Assert.True(module.WasReverted);
         Assert.False(dispatcher.IsRunning);
+    }
+
+    [Fact]
+    public async Task UpdateActiveParameters_UpdatesRunningModuleLive()
+    {
+        var dispatcher = new PrankDispatcher();
+        var module = new TestMockModule("live_mod", delayMs: 1000);
+        dispatcher.RegisterModule(module);
+
+        await dispatcher.ExecuteAsync("live_mod");
+        Assert.True(dispatcher.IsRunning);
+
+        var newParams = new Dictionary<string, object>
+        {
+            { "intensity", 9 }
+        };
+
+        dispatcher.UpdateActiveParameters("live_mod", newParams);
+
+        Assert.NotNull(module.UpdatedParams);
+        Assert.True(module.UpdatedParams.ContainsKey("intensity"));
+        Assert.Equal(9, module.UpdatedParams["intensity"]);
+
+        await dispatcher.StopActiveAsync();
     }
 }

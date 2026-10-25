@@ -15,4 +15,5 @@ public interface IPrankModule
 
     Task ExecuteAsync(PrankContext context, CancellationToken cancellationToken);
     Task RevertAsync();
+    void UpdateParameters(IReadOnlyDictionary<string, object> parameters) { }
 }

