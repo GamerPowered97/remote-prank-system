@@ -1,0 +1,19 @@
+<Window x:Class="Receiver.Modules.Visual.GlitchOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GlitchOverlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="#01000000"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Focusable="False">
+    <Grid Name="MainGrid" ClipToBounds="True">
+        <!-- Scanlines overlay -->
+        <Rectangle Name="ScanlineRect" Fill="#08000000" IsHitTestVisible="False" />
+        
+        <!-- Dynamic canvas for glitch slice artifacts -->
+        <Canvas Name="GlitchCanvas" IsHitTestVisible="False" />
+    </Grid>
+</Window>

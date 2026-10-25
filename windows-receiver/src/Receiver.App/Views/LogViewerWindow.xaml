@@ -1,0 +1,46 @@
+<Window x:Class="Receiver.App.Views.LogViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Remote Receiver - Status &amp; Logs"
+        Height="500" Width="700"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E24">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#282832" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="Remote Companion Receiver (.NET 8)" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+                <TextBlock Name="TxtStatus" Text="Listening on WebSocket port 48888 | mDNS: _prankctl._tcp.local" FontSize="12" Foreground="#8888AA" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Log List -->
+        <Border Grid.Row="1" Background="#141418" BorderBrush="#333344" BorderThickness="1" CornerRadius="6" Padding="4">
+            <TextBox Name="TxtLogs"
+                     Background="Transparent"
+                     Foreground="#80D080"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     BorderThickness="0"
+                     TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- Bottom Actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="BtnTestGlitch" Content="Test Glitch" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestGlitch_Click"/>
+            <Button Name="BtnTestDrift" Content="Test Mouse Drift" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestDrift_Click"/>
+            <Button Name="BtnTestChime" Content="Test Chime" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestChime_Click"/>
+            <Button Name="BtnClearLogs" Content="Clear Logs" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnClearLogs_Click"/>
+            <Button Name="BtnClose" Content="Hide Window" Padding="10,6" Margin="4,0" Background="#2563EB" Foreground="White" BorderThickness="0" Click="BtnClose_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

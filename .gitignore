@@ -1,0 +1,22 @@
+# .NET / C#
+bin/
+obj/
+publish-win/
+*.user
+*.userprefs
+*.suo
+.vs/
+
+# Android / Gradle
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+local.properties
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
