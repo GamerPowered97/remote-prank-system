@@ -77,18 +77,21 @@ public partial class App : System.Windows.Application
         try
         {
             _showWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\RemotePrankReceiver_ShowWindowEvent");
-            ThreadPool.RegisterWaitForSingleObject(_showWindowEvent, (state, timedOut) =>
+            var showWindowThread = new Thread(() =>
             {
-                Dispatcher.Invoke(() =>
+                while (true)
                 {
-                    if (_logViewerWindow != null)
+                    _showWindowEvent.WaitOne();
+                    Dispatcher.Invoke(() =>
                     {
-                        _logViewerWindow.Show();
-                        _logViewerWindow.WindowState = WindowState.Normal;
-                        _logViewerWindow.Activate();
-                    }
-                });
-            }, null, -1, false);
+                        if (_logViewerWindow != null)
+                        {
+                            _logViewerWindow.BringToForeground();
+                        }
+                    });
+                }
+            }) { IsBackground = true };
+            showWindowThread.Start();
         }
         catch { }
 
@@ -122,6 +125,7 @@ public partial class App : System.Windows.Application
             // 3. Initialize status & log viewer (kept hidden until requested)
             Log("Initializing LogViewerWindow...");
             _logViewerWindow = new LogViewerWindow(_dispatcher);
+            MainWindow = _logViewerWindow;
             Log("LogViewerWindow initialized.");
 
             // 4. Initialize GitHub update checker
@@ -178,9 +182,19 @@ public partial class App : System.Windows.Application
             _trayManager = new TrayIconManager(_dispatcher, _logViewerWindow, ShutdownApp);
             Log("TrayIconManager initialized.");
 
-            _dispatcher.Log("Remote Companion Receiver initialized successfully in System Tray.");
-            _trayManager.ShowBalloon("Remote Companion Receiver", "Running in System Tray on port 48888. Double-click tray icon to cancel any active effect.");
-            Log("Startup complete. Running in tray.");
+            _dispatcher.Log("Remote Companion Receiver initialized successfully.");
+            
+            bool startMinimized = e.Args.Any(a => string.Equals(a, "--background", StringComparison.OrdinalIgnoreCase) ||
+                                                  string.Equals(a, "--silent", StringComparison.OrdinalIgnoreCase));
+            if (!startMinimized)
+            {
+                _logViewerWindow.BringToForeground();
+            }
+            else
+            {
+                _trayManager.ShowBalloon("Remote Companion Receiver", "Running in System Tray on port 48888. Double-click tray icon or executable to open status window.");
+            }
+            Log("Startup complete. StartMinimized: " + startMinimized);
         }
         catch (Exception ex)
         {

@@ -32,7 +32,7 @@ public static class StartupManager
             if (enable)
             {
                 string exePath = Environment.ProcessPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RemotePrankReceiver.exe");
-                key.SetValue(APP_NAME, $"\"{exePath}\"");
+                key.SetValue(APP_NAME, $"\"{exePath}\" --background");
             }
             else
             {

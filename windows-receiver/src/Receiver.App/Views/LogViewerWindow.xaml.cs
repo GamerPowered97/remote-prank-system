@@ -40,6 +40,20 @@ public partial class LogViewerWindow : Window
         });
     }
 
+    public void BringToForeground()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+        ShowInTaskbar = true;
+        Topmost = true;
+        Activate();
+        Topmost = false;
+        Focus();
+    }
+
     private async void BtnTestGlitch_Click(object sender, RoutedEventArgs e)
     {
         await _dispatcher.ExecuteAsync("glitch_screen", new Dictionary<string, object> { { "duration_seconds", 3 } });
@@ -50,9 +64,14 @@ public partial class LogViewerWindow : Window
         await _dispatcher.ExecuteAsync("mouse_drift", new Dictionary<string, object> { { "duration_seconds", 3 } });
     }
 
-    private async void BtnTestChime_Click(object sender, RoutedEventArgs e)
+    private async void BtnTestFan_Click(object sender, RoutedEventArgs e)
     {
-        await _dispatcher.ExecuteAsync("audio_stinger", new Dictionary<string, object> { { "repeat_count", 1 } });
+        await _dispatcher.ExecuteAsync("fan_speed", new Dictionary<string, object> { { "duration_seconds", 5 }, { "intensity", 8 } });
+    }
+
+    private async void BtnTestAlert_Click(object sender, RoutedEventArgs e)
+    {
+        await _dispatcher.ExecuteAsync("system_alert", new Dictionary<string, object> { { "title", "Test Alert" }, { "message", "System dialog test from local control panel." } });
     }
 
     private void BtnClearLogs_Click(object sender, RoutedEventArgs e)
@@ -64,6 +83,7 @@ public partial class LogViewerWindow : Window
     private void BtnClose_Click(object sender, RoutedEventArgs e)
     {
         Hide();
+        ShowInTaskbar = false;
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -71,5 +91,6 @@ public partial class LogViewerWindow : Window
         // Don't close the process when log window is closed, just hide it
         e.Cancel = true;
         Hide();
+        ShowInTaskbar = false;
     }
 }

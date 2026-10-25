@@ -38,9 +38,10 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button Name="BtnTestGlitch" Content="Test Glitch" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestGlitch_Click"/>
             <Button Name="BtnTestDrift" Content="Test Mouse Drift" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestDrift_Click"/>
-            <Button Name="BtnTestChime" Content="Test Chime" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestChime_Click"/>
+            <Button Name="BtnTestFan" Content="Test Vent Turbo" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestFan_Click"/>
+            <Button Name="BtnTestAlert" Content="Test System Dialog" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnTestAlert_Click"/>
             <Button Name="BtnClearLogs" Content="Clear Logs" Padding="10,6" Margin="4,0" Background="#3A3A4A" Foreground="White" BorderThickness="0" Click="BtnClearLogs_Click"/>
-            <Button Name="BtnClose" Content="Hide Window" Padding="10,6" Margin="4,0" Background="#2563EB" Foreground="White" BorderThickness="0" Click="BtnClose_Click"/>
+            <Button Name="BtnClose" Content="Hide to Tray" Padding="10,6" Margin="4,0" Background="#2563EB" Foreground="White" BorderThickness="0" Click="BtnClose_Click"/>
         </StackPanel>
     </Grid>
 </Window>
