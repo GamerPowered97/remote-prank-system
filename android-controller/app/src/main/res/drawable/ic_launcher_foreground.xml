@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Ambient cyan pulse glow -->
+    <path
+        android:strokeColor="#3C0EA5E9"
+        android:strokeWidth="2.5"
+        android:pathData="M 54,18 A 36,36 0 1,0 54,90 A 36,36 0 1,0 54,18" />
+
+    <!-- Outer vibrant electric blue circle (matches Windows #0EA5E9) -->
+    <path
+        android:fillColor="#0EA5E9"
+        android:pathData="M 54,26 A 28,28 0 1,0 54,82 A 28,28 0 1,0 54,26" />
+
+    <!-- Dark contrast slate ring (matches Windows #0F172A) -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M 54,34 A 20,20 0 1,0 54,74 A 20,20 0 1,0 54,34" />
+
+    <!-- Center bright cyan core (matches Windows #38BDF8) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M 54,43 A 11,11 0 1,0 54,65 A 11,11 0 1,0 54,43" />
+
+    <!-- White core glint -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,50 A 4,4 0 1,0 54,58 A 4,4 0 1,0 54,50" />
+
+    <!-- Remote transmitter wave arcs -->
+    <path
+        android:strokeColor="#8038BDF8"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 33,28 A 40,40 0 0,1 75,28" />
+    <path
+        android:strokeColor="#5038BDF8"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 27,21 A 48,48 0 0,1 81,21" />
+</vector>
